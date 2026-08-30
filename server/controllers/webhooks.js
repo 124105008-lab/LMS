@@ -12,17 +12,23 @@ export const clerkWebhooks = async (req, res) => {
 
         switch (type) {
 
-            case 'user.created': {
-                const userData = {
-                    _id: data.id,
-                    email: data.email_addresses[0].email_address,
-                    name: `${data.first_name || ''} ${data.last_name || ''}`.trim(),
-                    imageUrl: data.image_url,
-                }
+           case 'user.created': {
+    const userData = {
+        _id: data.id,
+        email: data.email_addresses[0].email_addresses[0]?.email_address,
+        name: `${data.first_name || ''} ${data.last_name || ''}`.trim(),
+        imageUrl: data.image_url || 'https://via.placeholder.com/150', // Default image
+    }
 
-                await User.create(userData)
-                break
-            }
+    try {
+        await User.create(userData)
+        console.log("User created successfully:", userData._id)
+    } catch (dbError) {
+        console.error("Database error creating user:", dbError.message)
+        throw dbError
+    }
+    break
+}
 
             case 'user.updated': {
                 const userData = {
