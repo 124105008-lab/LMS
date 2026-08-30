@@ -8,7 +8,7 @@ export const clerkWebhooks = async (req, res) => {
             "svix-signature": req.headers["svix-signature"]
         })
 
-        const { data, type } = JSON.parse(req.body)
+        const { data, type } = JSON.parse(req.body.toString())
 
         switch (type) {
 
