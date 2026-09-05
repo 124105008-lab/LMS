@@ -1,9 +1,12 @@
 import React ,{ useRef , useState ,useEffect } from 'react'
+import { useAuth } from '@clerk/clerk-react'
 import uniqid from 'uniqid'
 import Quill from 'quill'
 import {assets} from '../../assets/assets'
 
 const AddCourse = () => {
+
+  const { getToken } = useAuth()
 
   const quillRef = useRef(null);
   const editorRef = useRef(null);
@@ -91,10 +94,71 @@ const AddCourse = () => {
       })
     }
 
+    // const handleSubmit = async (e) => {
+    //   e.preventDefault()
+    // }
+
     const handleSubmit = async (e) => {
-      e.preventDefault()
+    e.preventDefault()
+
+    try {
+        if (!image) {
+            alert('Please select course thumbnail')
+            return
+        }
+
+        const courseDescription = quillRef.current.root.innerHTML
+
+        const courseData = {
+            courseTitle,
+            courseDescription,
+            coursePrice: Number(coursePrice),
+            discount: Number(discount),
+            courseContent: chapters
+        }
+
+        const formData = new FormData()
+
+        formData.append('courseData', JSON.stringify(courseData))
+        formData.append('image', image)
+
+        const token = await getToken()
+
+        const response = await fetch(
+            'http://localhost:5000/api/educator/add-course',
+            {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`
+                },
+                body: formData
+            }
+        )
+
+        const data = await response.json()
+
+        console.log('ADD COURSE RESPONSE:', data)
+
+        if (data.success) {
+            alert('Course Added Successfully')
+            
+            setCourseTitle('')
+            setCoursePrice(0)
+            setDiscount(0)
+            setImage(null)
+            setChapters([])
+            
+        } else {
+            alert(data.message)
+        }
+
+    } catch (error) {
+        console.log('ADD COURSE ERROR:', error)
+        alert(error.message)
     }
+}
   
+//------------------------------
     useEffect(()=>{
       // Initiate Quill only once
       if(!quillRef.current && editorRef.current){

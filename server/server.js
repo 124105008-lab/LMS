@@ -5,7 +5,10 @@ import dns from 'node:dns'
 import { clerkClient, clerkMiddleware, getAuth } from '@clerk/express'
 import connectDB from './configs/mongodb.js'
 import { clerkWebhooks } from './controllers/webhooks.js'
-import User from './models/User.js'
+import educatorRouter from './routes/educatorRoutes.js'
+import User from './modles/User.js'
+import connectCloudinary from './configs/cloudinary.js'
+import courseRouter from './routes/courseRoutes.js'
 
 dns.setServers(['8.8.8.8', '8.8.4.4'])
 
@@ -22,6 +25,7 @@ app.use(cors({
       callback(null, true)
       return
     }
+  
 
     callback(new Error('Not allowed by CORS'))
   },
@@ -29,6 +33,7 @@ app.use(cors({
 }))
 
 await connectDB()
+await connectCloudinary()
 
 app.post('/clerk', express.raw({ type: 'application/json' }), clerkWebhooks)
 
@@ -38,7 +43,29 @@ app.get('/', (req, res) => {
 
 app.use(express.json({ limit: '1mb' }))
 app.use(express.urlencoded({ extended: true }))
-app.use(clerkMiddleware())
+//app.use(clerkMiddleware())
+
+app.use(clerkMiddleware({
+    secretKey: process.env.CLERK_SECRET_KEY,
+    publishableKey: process.env.CLERK_PUBLISHABLE_KEY,
+}))
+
+app.get('/api/test-auth', (req, res) => {
+    const auth = getAuth(req)
+
+    console.log("TEST AUTH:", auth)
+
+    res.json({
+        userId: auth.userId || null,
+        isAuthenticated: auth.isAuthenticated
+    })
+})
+
+
+// Educator routes
+app.use('/api/educator',express.json(), educatorRouter)
+
+app.use('/api/course',express.json(),courseRouter)
 
 app.get('/api/auth/me', async (req, res) => {
   const auth = getAuth(req)
@@ -112,7 +139,7 @@ app.post('/api/auth/logout', async (req, res) => {
     message: 'Logout successful. Please sign out from the client with Clerk.',
   })
 })
-
+ //Port 
 const PORT = process.env.PORT || 5000
 
 app.listen(PORT, () => {

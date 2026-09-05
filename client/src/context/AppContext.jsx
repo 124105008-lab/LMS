@@ -2,8 +2,7 @@ import { createContext , useState, useEffect} from  "react";
 import { dummyCourses } from "../assets/assets"
 import { useNavigate } from "react-router-dom";
 import humanizeDuration from 'humanize-duration'
-
-
+import { useUser , useAuth } from '@clerk/clerk-react';
 
 export const AppContext =createContext()
 
@@ -12,7 +11,26 @@ export const AppContextProvider = (props)=>{
   const currency = import.meta.env.VITE_CURRENCY
   const navigate = useNavigate()
 
-  const [allCourses, setAllCourses] = useState([])
+   const {getToken} = useAuth()
+
+  const testAuth = async () => {
+   const token = await getToken()
+
+  console.log("TOKEN:", token ? "TOKEN MIL GAYA" : "TOKEN NAHI MILA")
+
+  const response = await fetch('http://localhost:5000/api/test-auth', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  console.log("STATUS:", response.status)
+  console.log("DATA:", await response.json())
+}
+
+  const {user} = useUser()
+
+   const [allCourses, setAllCourses] = useState([])
   const [isEducator, setIsEducator] = useState(true)
   const [enrolledCourses, setEnrolledCourses] = useState([])
 
@@ -77,6 +95,17 @@ export const AppContextProvider = (props)=>{
      fetchAllCourses()
      fetchUserEnrolledCourses()
   },[])
+
+  const logToken = async ()=>{
+    console.log(await getToken());
+  }
+
+  useEffect(()=>{
+    if(user){
+      logToken()
+    }
+  
+  },[user])
     const value = {
           currency , allCourses , navigate , calculateRating
           , isEducator , setIsEducator , calculateNoOfLectures ,
